@@ -2,7 +2,32 @@
 
 `proto-compatibility-tool` is an utility that verifies .proto files and ensures backwards compatibility to prevent breaking changes on exposed APIs.
 
-It runs as part of the CI process, and runs verifications agains published versions of .proto files in NPM packages.
+It runs as part of the CI process, and runs verifications against published versions of .proto files in NPM packages, S3, static URL or local files.
+
+This tool does generate any kind of code, it only performs validations on .proto files.
+
+## Usage
+
+```bash
+npm i -g proto-compatibility-tool
+
+# proto-compatibility-tool <local file> <remote file>
+
+# compare two local files
+proto-compatibility-tool \
+  ./api-v0.proto \
+  ./api-v1.proto
+
+# compare in a PR, against main branch using github, please match the paths
+proto-compatibility-tool \
+  ./test/api.proto \
+  https://raw.githubusercontent.com/well-known-components/proto-compatibility-tool/main/test/test-api.proto
+
+# compare in a PR, against published package in NPM
+proto-compatibility-tool \
+  ./test/api.proto \
+  https://unpkg.com/proto-compatibility-tool@latest/test/test-api.proto
+```
 
 ## Design
 

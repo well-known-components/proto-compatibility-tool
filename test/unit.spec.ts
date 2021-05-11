@@ -17,18 +17,18 @@ function test(description: string, src: string, ...exceptionMatch: RegExp[]) {
     const result = validateNewApiVersion(initialRoot.root, finalRoot.root)
 
     if (exceptionMatch && exceptionMatch.length) {
-      if (result.length == 0) {
+      if (result.errors.length == 0) {
         throw new Error("Did not throw")
       }
       for (let matcher of exceptionMatch) {
-        const found = result.some(($) => $.message.match(matcher))
+        const found = result.errors.some(($) => $.message.match(matcher))
         if (!found) {
-          throw new Error("No error matching " + exceptionMatch + " got: \n" + result.join("\n"))
+          throw new Error("No error matching " + exceptionMatch + " got: \n" + result.errors.join("\n"))
         }
       }
     } else {
-      if (result.length) {
-        throw new Error("There was " + result.length + " unexpected errors:\n" + result.join("\n"))
+      if (result.errors.length) {
+        throw new Error("There was " + result.errors.length + " unexpected errors:\n" + result.errors.join("\n"))
       }
     }
   })

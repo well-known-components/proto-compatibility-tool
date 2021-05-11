@@ -4,6 +4,7 @@ package twirp.example.haberdasher;
 
 message Size {
   int32 hat_size = 1;
+  reserved 2;
 }
 
 message Hat {

@@ -2,8 +2,8 @@ syntax = "proto3";
 
 package twirp.example.haberdasher;
 
-message Size {
-  int32 hat_size = 1;
+message HatOptions {
+  int32 hat_color = 1;
 }
 
 message Hat {
@@ -11,5 +11,5 @@ message Hat {
 }
 
 service Haberdasher {
-  rpc MakeHat(Size) returns (Hat);
+  rpc MakeHat(HatOptions) returns (Hat);
 }

@@ -4,10 +4,15 @@
 
 ```ts
 
+import { parse } from 'protobufjs';
 import { Root } from 'protobufjs';
 
+export { parse }
+
 // @public
-export function validateNewApiVersion(oldApi: Root, newApi: Root): Error[];
+export function validateNewApiVersion(oldApi: Root, newApi: Root): {
+    errors: Error[];
+};
 
 
 // (No @packageDocumentation comment for this package)

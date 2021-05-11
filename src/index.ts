@@ -1,7 +1,8 @@
 import { Enum, Namespace, NamespaceBase, ReflectionObject, Root, Service, Type } from "protobufjs"
+export { parse } from "protobufjs"
 
 /**
- * A function that does something
+ * Compares two parsed and resolved protobuf roots
  * @public
  */
 export function validateNewApiVersion(oldApi: Root, newApi: Root) {
@@ -16,7 +17,7 @@ export function validateNewApiVersion(oldApi: Root, newApi: Root) {
 
   validate(oldApi, newApi, errors)
 
-  return errors
+  return { errors }
 }
 
 function isNamespaceBase(value: ReflectionObject): value is NamespaceBase {
