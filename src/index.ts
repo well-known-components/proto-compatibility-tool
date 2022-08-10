@@ -1,5 +1,5 @@
 import { Enum, Namespace, NamespaceBase, ReflectionObject, Root, Service, Type } from "protobufjs"
-export { parse } from "protobufjs"
+export { parse, loadSync } from "protobufjs"
 
 /**
  * Compares two parsed and resolved protobuf roots

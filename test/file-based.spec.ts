@@ -33,7 +33,7 @@ describe("file based", () => {
 })
 
 describe("pattern based", () => {
-  test(`--recursive "test/folder-based/version-1.0.0" "test/folder-based"`, /Cannot read file .+x\.proto/)
+  test(`--recursive "test/folder-based/version-1.0.0" "test/folder-based"`, /no such file or directory/)
   test(`--recursive "test/folder-based/version-1.0.0" "test/folder-based/version-1.0.0"`)
   test(`--recursive "test/folder-based/version-1.0.0" "test/folder-based/version-1.0.1"`)
   test(

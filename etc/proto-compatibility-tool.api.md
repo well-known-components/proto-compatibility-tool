@@ -4,8 +4,11 @@
 
 ```ts
 
+import { loadSync } from 'protobufjs';
 import { parse } from 'protobufjs';
 import { Root } from 'protobufjs';
+
+export { loadSync }
 
 export { parse }
 
@@ -13,7 +16,6 @@ export { parse }
 export function validateNewApiVersion(oldApi: Root, newApi: Root): {
     errors: Error[];
 };
-
 
 // (No @packageDocumentation comment for this package)
 

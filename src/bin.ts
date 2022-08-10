@@ -42,11 +42,8 @@ async function main() {
 
   for (const [remote, local] of result.fixtures) {
     try {
-      const remoteContent = await readFile(remote)
-      const localContent = await readFile(local)
-
-      const remoteRoot = lib.parse(remoteContent)
-      const localRoot = lib.parse(localContent)
+      const remoteRoot = lib.loadSync(remote)
+      const localRoot = lib.loadSync(local)
 
       remoteRoot.root.resolveAll()
       localRoot.root.resolveAll()
@@ -84,8 +81,6 @@ async function main() {
 }
 
 async function readFile(file: string) {
-  process.stderr.write("> Loading file " + file + "\n")
-
   if (fs.existsSync(file)) {
     return fs.readFileSync(file).toString()
   }
