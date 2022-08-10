@@ -53,6 +53,38 @@ describe("unit", () => {
     `
   )
   test(
+    "Changing a field id fails",
+    `
+    message MessageName {
+      int32 message_id = 1;
+   -  string message_payload = 4;
+   +  string message_payload = 2;
+    }
+    `,
+    /Id of field messagePayload was changed 4 -> 2 from the type .MessageName/
+  )
+  test(
+    "Removing a field fails",
+    `
+    message MessageName {
+      int32 message_id = 1;
+   -  string message_payload = 4;
+    }
+    `,
+    /The field messagePayload was removed without adding a reservation to the type .MessageName/
+  )
+  test(
+    "Changing a field id and name fails",
+    `
+    message MessageName {
+      int32 message_id = 1;
+   -  string message_payload = 4;
+   +  string message_payloada = 2;
+    }
+    `,
+    /The field messagePayload was removed without adding a reservation to the type .MessageName/
+  )
+  test(
     "Adding reserved fields work",
     `
     message MessageName {

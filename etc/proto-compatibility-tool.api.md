@@ -4,13 +4,18 @@
 
 ```ts
 
+import { load } from 'protobufjs';
 import { loadSync } from 'protobufjs';
 import { parse } from 'protobufjs';
 import { Root } from 'protobufjs';
 
+export { load }
+
 export { loadSync }
 
 export { parse }
+
+export { Root }
 
 // @public
 export function validateNewApiVersion(oldApi: Root, newApi: Root): {

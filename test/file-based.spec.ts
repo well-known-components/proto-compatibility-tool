@@ -7,7 +7,7 @@ function test(args: string, ...exceptionMatch: RegExp[]) {
     const result: { errors: string[] } = JSON.parse(stdout)
     if (exceptionMatch && exceptionMatch.length) {
       if (result.errors.length == 0) {
-        throw new Error("Did not throw")
+        throw new Error("Did not throw" + JSON.stringify(result))
       }
       for (let matcher of exceptionMatch) {
         const found = result.errors.some(($) => $.match(matcher))
@@ -39,5 +39,11 @@ describe("pattern based", () => {
   test(
     `--recursive "test/folder-based/version-1.0.0" "test/folder-based/version-2.0.0"`,
     /The field hatSize was removed without adding a reservation to the type .twirp.example.haberdasher.Size/
+  )
+  test(
+    `--recursive "test/folder-based/real-world/head" "test/folder-based/real-world/base"`,
+    /The message .CRDTResponsea was removed/,
+    /FieldId of field sceneId was changed 2 -> 1 from the type .PullCRDTRequest/,
+    /Request message signature changed .CRDTResponsea -> .CRDTResponse for method .CRDTService.SendCrdt/
   )
 })

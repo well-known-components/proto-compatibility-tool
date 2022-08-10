@@ -1,5 +1,5 @@
-import { Enum, Namespace, NamespaceBase, ReflectionObject, Root, Service, Type } from "protobufjs"
-export { parse, loadSync } from "protobufjs"
+import { Enum, Namespace, NamespaceBase, OneOf, ReflectionObject, Root, roots, Service, Type } from "protobufjs"
+export { parse, loadSync, Root, load } from "protobufjs"
 
 /**
  * Compares two parsed and resolved protobuf roots
@@ -40,6 +40,14 @@ function isEnum(value: ReflectionObject): value is Enum {
   return value instanceof Enum || `valuesById` in value
 }
 
+function isOneOf(value: ReflectionObject): value is OneOf {
+  return value instanceof OneOf || `oneof` in value
+}
+
+function isExtension(value: ReflectionObject): boolean {
+  return `extend` in value && "id" in value
+}
+
 function validate(oldApi: NamespaceBase, newApi: NamespaceBase, errors: Error[]) {
   if (isNamespaceBase(oldApi) && isNamespaceBase(newApi)) {
     for (let oldChild of oldApi.nestedArray) {
@@ -73,8 +81,20 @@ function validate(oldApi: NamespaceBase, newApi: NamespaceBase, errors: Error[])
         } else {
           validate(oldChild, newNamespace, errors)
         }
+      } else if (isOneOf(oldChild)) {
+        const newType = (newApi.nested || {})[oldChild.name]
+        if (!newType) {
+          errors.push(new Error(`The oneof ${oldChild.fullName} was removed`))
+        } else {
+          // validateOneOf(oldChild, newType, errors)
+        }
+      } else if (isExtension(oldChild)) {
+        const newExtension = newApi.lookup(oldChild.name)
+        if (!newExtension) {
+          errors.push(new Error(`The extension ${oldChild.fullName} was removed`))
+        }
       } else {
-        errors.push(new Error(`Unhandled ` + JSON.stringify(oldChild)))
+        errors.push(new Error(`Unhandled ` + JSON.stringify(oldChild) + " in " + oldApi.fullName))
       }
     }
   }
@@ -149,7 +169,22 @@ function validateType(oldType: Type, newType: Type, errors: Error[]) {
           `Type of field ${oldField.name} was changed ${oldField.type} -> ${newField.type} from the type ${oldType.fullName}`
         )
       )
+    } else if (oldField.id != newField.id) {
+      errors.push(
+        new Error(
+          `FieldId of field ${oldField.name} was changed ${oldField.id} -> ${newField.id} from the type ${oldType.fullName}`
+        )
+      )
     }
+  }
+
+  function hasReservedId(type: Type, id: number) {
+    if (type.reserved) {
+      for (let reserved of type.reserved) {
+        if (reserved[0] >= id && id <= reserved[1]) return true
+      }
+    }
+    return false
   }
 
   if (oldType.reserved) {
@@ -157,12 +192,10 @@ function validateType(oldType: Type, newType: Type, errors: Error[]) {
       if (typeof reservation == `string`) {
         throw new Error(`How to handle string reservations?`)
       } else {
-        if (reservation[0] == reservation[1]) {
-          if (!newType.isReservedId(reservation[0])) {
-            errors.push(new Error(`The reserved field ${reservation[0]} was removed from the type ${oldType.fullName}`))
+        for (let r = Math.min(reservation[0], reservation[1]); r <= Math.max(reservation[0], reservation[1]); r++) {
+          if (!hasReservedId(newType, r)) {
+            errors.push(new Error(`The reserved field ${r} was removed from the type ${newType.fullName}`))
           }
-        } else {
-          errors.push(new Error(`Range reservations are not allowed`))
         }
       }
     }

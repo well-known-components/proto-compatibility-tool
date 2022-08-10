@@ -3,6 +3,7 @@
 import fetch from "node-fetch"
 import * as fs from "fs"
 import * as path from "path"
+import * as pbjspath from "@protobufjs/path"
 import * as lib from "./index"
 import { glob } from "glob"
 
@@ -17,33 +18,45 @@ async function main() {
   if (nonOptionArguments.length == 1) throw new UsageError("No <local file> was specified")
   if (nonOptionArguments.length > 2) throw new UsageError("Found extra arguments, only two files can be specified")
 
-  const [remote, local] = nonOptionArguments
-
   const JSON_OUTPUT = optionArguments.includes("--json")
   const RECURSIVE = optionArguments.includes("--recursive")
 
-  const result: { errors: Error[]; fixtures: [string, string][] } = { errors: [], fixtures: [] }
+  const result: {
+    errors: Error[]
+    fixtures: { remoteCwd: string; localCwd: string; remoteFile: string; localFile: string }[]
+  } = { errors: [], fixtures: [] }
 
-  if (RECURSIVE) {
-    const remoteFiles = glob.sync("**/*.proto", { cwd: remote, absolute: false })
-    for (const remoteFile of remoteFiles) {
-      const lhs = path.resolve(remote, remoteFile)
-      const rhs = path.resolve(local, remoteFile)
-
-      result.fixtures.push([lhs, rhs])
+  {
+    const [remote, local] = nonOptionArguments
+    if (RECURSIVE) {
+      const remoteFiles = glob.sync("**/*.proto", { cwd: remote, absolute: false })
+      for (const remoteFile of remoteFiles) {
+        result.fixtures.push({ remoteCwd: remote, localCwd: local, remoteFile, localFile: remoteFile })
+      }
+    } else {
+      result.fixtures.push({ remoteCwd: ".", localCwd: ".", remoteFile: remote, localFile: local })
     }
-  } else {
-    result.fixtures.push([remote, local])
   }
 
-  if (!result.fixtures) {
+  if (!result.fixtures.length) {
     result.errors.push(new ValidationError("Matching files for comparision not found"))
   }
 
-  for (const [remote, local] of result.fixtures) {
+  for (const fixture of result.fixtures) {
     try {
-      const remoteRoot = lib.loadSync(remote)
-      const localRoot = lib.loadSync(local)
+      const remoteRoot = new lib.Root()
+      const localRoot = new lib.Root()
+
+      localRoot.resolvePath = remoteRoot.resolvePath = function (origin: string, target: string) {
+        const resolved = pbjspath.resolve(origin, target)
+        if (target.startsWith("google/") && !fs.existsSync(resolved)) {
+          return pbjspath.resolve(require.resolve("protobufjs/package.json"), target)
+        }
+        return resolved
+      }
+
+      await remoteRoot.load(path.resolve(fixture.remoteCwd, fixture.remoteFile))
+      await localRoot.load(path.resolve(fixture.localCwd, fixture.localFile))
 
       remoteRoot.root.resolveAll()
       localRoot.root.resolveAll()
@@ -58,18 +71,25 @@ async function main() {
 
   if (JSON_OUTPUT) {
     const json = {
-      errors: result.errors.map(($) => $.message),
+      errors: Array.from(new Set<string>(result.errors.map(($) => $.message))),
     }
     process.stdout.write(JSON.stringify(json, null, 2) + "\n")
     process.exitCode = result.errors.length ? 1 : 0
     return
   }
 
+  console.log("\nChecked:")
+
+  for (let fixture of result.fixtures) {
+    console.log("- " + path.relative(process.cwd(), path.resolve(fixture.localCwd, fixture.localFile)))
+    console.log("  " + path.relative(process.cwd(), path.resolve(fixture.remoteCwd, fixture.remoteFile)))
+  }
+
   if (result.errors.length) {
     console.log("\nErrors:")
-
-    for (let err of result.errors) {
-      console.log("- " + err.message)
+    const errs = new Set<string>(result.errors.map((_) => _.message))
+    for (let err of errs) {
+      console.log("- " + err)
     }
 
     console.log("")
@@ -78,20 +98,6 @@ async function main() {
   }
 
   console.log("> Compatibility validation successful! ✅")
-}
-
-async function readFile(file: string) {
-  if (fs.existsSync(file)) {
-    return fs.readFileSync(file).toString()
-  }
-
-  if (file.startsWith("http:") || file.startsWith("https:")) {
-    const res = await fetch(file)
-    if (!res.ok) throw new Error(`fetching ${file} failed`)
-    return res.text()
-  }
-
-  throw new ValidationError(`Cannot read file ${file}`)
 }
 
 main().catch(($) => {
