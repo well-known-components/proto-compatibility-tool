@@ -2,13 +2,16 @@
 
 import fetch from "node-fetch"
 import * as fs from "fs"
+import * as path from "path"
 import * as lib from "./index"
+import { glob } from "glob"
 
 export class UsageError extends Error {}
 export class ValidationError extends Error {}
 
 async function main() {
   const nonOptionArguments = process.argv.slice(2).filter(($) => !$.startsWith("-"))
+  const optionArguments = process.argv.slice(2).filter(($) => $.startsWith("-"))
 
   if (nonOptionArguments.length == 0) throw new UsageError("No <published file> was specified")
   if (nonOptionArguments.length == 1) throw new UsageError("No <local file> was specified")
@@ -16,23 +19,59 @@ async function main() {
 
   const [remote, local] = nonOptionArguments
 
-  const remoteContent = await readFile(remote)
-  const localContent = await readFile(local)
+  const JSON_OUTPUT = optionArguments.includes("--json")
+  const RECURSIVE = optionArguments.includes("--recursive")
 
-  const remoteRoot = lib.parse(remoteContent)
-  const localRoot = lib.parse(localContent)
+  const result: { errors: Error[]; fixtures: [string, string][] } = { errors: [], fixtures: [] }
 
-  remoteRoot.root.resolveAll()
-  localRoot.root.resolveAll()
+  if (RECURSIVE) {
+    const remoteFiles = glob.sync("**/*.proto", { cwd: remote, absolute: false })
+    for (const remoteFile of remoteFiles) {
+      const lhs = path.resolve(remote, remoteFile)
+      const rhs = path.resolve(local, remoteFile)
 
-  const validationResult = lib.validateNewApiVersion(remoteRoot.root, localRoot.root)
+      result.fixtures.push([lhs, rhs])
+    }
+  } else {
+    result.fixtures.push([remote, local])
+  }
 
-  if (validationResult.errors.length) {
-    const { errors } = validationResult
+  if (!result.fixtures) {
+    result.errors.push(new ValidationError("Matching files for comparision not found"))
+  }
 
+  for (const [remote, local] of result.fixtures) {
+    try {
+      const remoteContent = await readFile(remote)
+      const localContent = await readFile(local)
+
+      const remoteRoot = lib.parse(remoteContent)
+      const localRoot = lib.parse(localContent)
+
+      remoteRoot.root.resolveAll()
+      localRoot.root.resolveAll()
+
+      const validationResult = lib.validateNewApiVersion(remoteRoot.root, localRoot.root)
+
+      result.errors.push(...validationResult.errors)
+    } catch (err: any) {
+      result.errors.push(err)
+    }
+  }
+
+  if (JSON_OUTPUT) {
+    const json = {
+      errors: result.errors.map(($) => $.message),
+    }
+    process.stdout.write(JSON.stringify(json, null, 2) + "\n")
+    process.exitCode = result.errors.length ? 1 : 0
+    return
+  }
+
+  if (result.errors.length) {
     console.log("\nErrors:")
 
-    for (let err of errors) {
+    for (let err of result.errors) {
       console.log("- " + err.message)
     }
 
@@ -45,7 +84,7 @@ async function main() {
 }
 
 async function readFile(file: string) {
-  console.log("> Loading file " + file)
+  process.stderr.write("> Loading file " + file + "\n")
 
   if (fs.existsSync(file)) {
     return fs.readFileSync(file).toString()
@@ -57,7 +96,7 @@ async function readFile(file: string) {
     return res.text()
   }
 
-  throw new Error(`Cannot read file ${file}`)
+  throw new ValidationError(`Cannot read file ${file}`)
 }
 
 main().catch(($) => {

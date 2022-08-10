@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package twirp.example.haberdasher;
+
+message Size {
+  reserved 2;
+}
+
+message Hat {
+  int32 hat_id = 1;
+}
+
+service Haberdasher {
+  rpc MakeHat(Size) returns (Hat);
+}
