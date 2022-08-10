@@ -85,8 +85,6 @@ function validate(oldApi: NamespaceBase, newApi: NamespaceBase, errors: Error[])
         const newType = (newApi.nested || {})[oldChild.name]
         if (!newType) {
           errors.push(new Error(`The oneof ${oldChild.fullName} was removed`))
-        } else {
-          // validateOneOf(oldChild, newType, errors)
         }
       } else if (isExtension(oldChild)) {
         const newExtension = newApi.lookup(oldChild.name)
@@ -163,18 +161,39 @@ function validateType(oldType: Type, newType: Type, errors: Error[]) {
           )
         )
       }
-    } else if (oldField.type != newField.type) {
-      errors.push(
-        new Error(
-          `Type of field ${oldField.name} was changed ${oldField.type} -> ${newField.type} from the type ${oldType.fullName}`
+    } else {
+      if (oldField.type != newField.type) {
+        errors.push(
+          new Error(
+            `Type of field ${oldField.name} was changed ${oldField.type} -> ${newField.type} from the type ${oldType.fullName}`
+          )
         )
-      )
-    } else if (oldField.id != newField.id) {
-      errors.push(
-        new Error(
-          `FieldId of field ${oldField.name} was changed ${oldField.id} -> ${newField.id} from the type ${oldType.fullName}`
+      }
+      if (oldField.id != newField.id) {
+        errors.push(
+          new Error(
+            `FieldId of field ${oldField.name} was changed ${oldField.id} -> ${newField.id} from the type ${oldType.fullName}`
+          )
         )
-      )
+      }
+      if (!!oldField.optional != !!newField.optional) {
+        errors.push(
+          new Error(
+            `Optional of field ${
+              oldField.name
+            } was changed ${!!oldField.optional} -> ${!!newField.optional} from the type ${oldType.fullName}`
+          )
+        )
+      }
+      if (!!oldField.required != !!newField.required) {
+        errors.push(
+          new Error(
+            `Required of field ${
+              oldField.name
+            } was changed ${!!oldField.required} -> ${!!newField.required} from the type ${oldType.fullName}`
+          )
+        )
+      }
     }
   }
 

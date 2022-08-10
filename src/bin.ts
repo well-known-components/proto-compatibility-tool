@@ -71,6 +71,7 @@ async function main() {
 
   if (JSON_OUTPUT) {
     const json = {
+      fixtures: result.fixtures,
       errors: Array.from(new Set<string>(result.errors.map(($) => $.message))),
     }
     process.stdout.write(JSON.stringify(json, null, 2) + "\n")

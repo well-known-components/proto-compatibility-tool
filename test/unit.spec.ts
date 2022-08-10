@@ -53,6 +53,78 @@ describe("unit", () => {
     `
   )
   test(
+    "Oneof removal",
+    `
+    message MessageName {
+      oneof _some_name {
+        int32 message_id = 1;
+  -     int32 message_payload = 3;
+      }
+    }
+    `,
+    /The field messagePayload was removed without adding a reservation to the type .MessageName/
+  )
+  test(
+    "Oneof addition",
+    `
+    message MessageName {
+      oneof _some_name {
+        int32 message_id = 1;
+  +     int32 message_payload = 3;
+      }
+    }
+    `
+  )
+  // test(
+  //   "Changing a optional fails",
+  //   `
+  //   message Test {}
+  //   message MessageName {
+  //     int32 message_id = 1;
+  //  -  optional Test message_payload = 4;
+  //  +           Test message_payload = 4;
+  //   }
+  //   `,
+  //   /Id of field messagePayload was changed 4 -> 2 from the type .MessageName/
+  // )
+  // test(
+  //   "Changing a optional fails",
+  //   `
+  //   message Test {}
+  //   message MessageName {
+  //     int32 message_id = 1;
+  //  -           Test message_payload = 4;
+  //  +  optional Test message_payload = 4;
+  //   }
+  //   `,
+  //   /Id of field messagePayload was changed 4 -> 2 from the type .MessageName/
+  // )
+  test(
+    "Changing a required fails",
+    `
+    message MessageName {
+      int32 message_id = 1;
+   -           int32 message_payload = 4;
+   +  required int32 message_payload = 4;
+    }
+    `,
+    /Optional of field messagePayload was changed true -> false from the type .MessageName/
+  )
+  test(
+    "Remove oneof",
+    `
+    message MessageName {
+      int32 message_id = 1;
+  -   oneof _some_name {
+  -     int32 x = 2;
+  -     int32 y = 3;
+  -   }
+    }
+    `,
+    /The field x was removed without adding a reservation to the type .MessageName/,
+    /The field y was removed without adding a reservation to the type .MessageName/
+  )
+  test(
     "Changing a field id fails",
     `
     message MessageName {

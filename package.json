@@ -23,18 +23,18 @@
   "homepage": "https://github.com/well-known-components/proto-compatibility-tool#readme",
   "devDependencies": {
     "@microsoft/api-extractor": "^7.12.1",
+    "@types/glob": "^7.2.0",
     "@types/mocha": "^9.1.1",
     "expect": "^26.6.2",
     "mocha": "^10.0.0",
     "ts-node": "^9.1.1",
-    "typescript": "^4.2.4",
-    "@types/glob": "^7.2.0"
+    "typescript": "^4.2.4"
   },
   "dependencies": {
     "@types/node-fetch": "^2.5.10",
     "glob": "^8.0.3",
     "node-fetch": "^2.6.7",
-    "protobufjs": "^6.11.3"
+    "protobufjs": "^7.0.0"
   },
   "files": [
     "dist",
