@@ -22,7 +22,7 @@ async function main() {
   const RECURSIVE = optionArguments.includes("--recursive")
 
   const result: {
-    errors: Error[]
+    errors: string[]
     fixtures: { remoteCwd: string; localCwd: string; remoteFile: string; localFile: string }[]
   } = { errors: [], fixtures: [] }
 
@@ -39,7 +39,7 @@ async function main() {
   }
 
   if (!result.fixtures.length) {
-    result.errors.push(new ValidationError("Matching files for comparision not found"))
+    result.errors.push("Matching files for comparision not found")
   }
 
   for (const fixture of result.fixtures) {
@@ -63,16 +63,23 @@ async function main() {
 
       const validationResult = lib.validateNewApiVersion(remoteRoot.root, localRoot.root)
 
-      result.errors.push(...validationResult.errors)
+      result.errors.push(...validationResult.errors.map(($) => $.message))
     } catch (err: any) {
-      result.errors.push(err)
+      // TODO: remove this IF after https://github.com/protobufjs/protobuf.js/pull/1789 is released
+      if (err.message == "object must be a valid nested object") {
+        if (!JSON_OUTPUT) {
+          console.log("⚠️ WARNING: the file " + fixture.remoteFile + " was ignored due to a bug in protobuf.js parser")
+        }
+      } else {
+        result.errors.push(err.message + " (in " + fixture.remoteFile + ")")
+      }
     }
   }
 
   if (JSON_OUTPUT) {
     const json = {
       fixtures: result.fixtures,
-      errors: Array.from(new Set<string>(result.errors.map(($) => $.message))),
+      errors: Array.from(new Set<string>(result.errors)),
     }
     process.stdout.write(JSON.stringify(json, null, 2) + "\n")
     process.exitCode = result.errors.length ? 1 : 0
@@ -88,7 +95,7 @@ async function main() {
 
   if (result.errors.length) {
     console.log("\nErrors:")
-    const errs = new Set<string>(result.errors.map((_) => _.message))
+    const errs = new Set<string>(result.errors)
     for (let err of errs) {
       console.log("- " + err)
     }
