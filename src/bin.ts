@@ -36,7 +36,7 @@ async function main() {
       // then compare NEW local files that are not present in the remote
       const localFiles = glob.sync("**/*.proto", { cwd: local, absolute: false })
       for (const localFile of localFiles) {
-        if (!result.fixtures.find(($) => $.localFile == localFile)) {
+        if (!result.fixtures.find(($) => $.localFile == localFile) && !localFile.startsWith('node_modules/')) {
           result.fixtures.push({ remoteCwd: local, localCwd: local, remoteFile: localFile, localFile: localFile })
         }
       }
