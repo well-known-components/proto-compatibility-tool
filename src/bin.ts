@@ -91,8 +91,8 @@ async function main() {
   for (let fixture of result.fixtures) {
     const local = path.relative(process.cwd(), path.resolve(fixture.localCwd, fixture.localFile))
     const remote = path.relative(process.cwd(), path.resolve(fixture.remoteCwd, fixture.remoteFile))
-    if (local == remote) {
-      console.log("- " + local)
+    console.log("- " + local)
+    if (local != remote) {
       console.log("  " + remote)
     }
   }
