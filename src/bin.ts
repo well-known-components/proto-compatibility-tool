@@ -102,17 +102,17 @@ async function main() {
       // summary
       "# proto-compatibility-tool summay",
       "",
-      "| file | status | errors |",
-      "| ---- | ------ | ------ |",
+      "| file | status |",
+      "| ---- | ------ |",
     ]
 
     for (let fixture of result.fixtures) {
       const local = path.relative(process.cwd(), path.resolve(fixture.localCwd, fixture.localFile))
       const remote = path.relative(process.cwd(), path.resolve(fixture.remoteCwd, fixture.remoteFile))
       if (local == remote) {
-        results.push(`${local} | new | ... |`)
+        results.push(`${local} | new |`)
       } else {
-        results.push(`${local} | checked | ... |`)
+        results.push(`${local} | checked |`)
       }
     }
 
