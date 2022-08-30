@@ -97,6 +97,35 @@ async function main() {
     }
   }
 
+  if (process.env.GITHUB_STEP_SUMMARY && fs.existsSync(process.env.GITHUB_STEP_SUMMARY)) {
+    const results: string[] = [
+      // summary
+      "# proto-compatibility-tool summay",
+      "",
+      "| file | status | errors |",
+      "| ---- | ------ | ------ |",
+    ]
+
+    for (let fixture of result.fixtures) {
+      const local = path.relative(process.cwd(), path.resolve(fixture.localCwd, fixture.localFile))
+      const remote = path.relative(process.cwd(), path.resolve(fixture.remoteCwd, fixture.remoteFile))
+      if (local == remote) {
+        results.push(`${local} | new | ... |`)
+      } else {
+        results.push(`${local} | checked | ... |`)
+      }
+    }
+
+    results.push("# proto-compatibility-tool errors", "")
+
+    const errs = new Set<string>(result.errors)
+    for (let err of errs) {
+      results.push("- " + err)
+    }
+
+    fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, results.join("\n"))
+  }
+
   if (result.errors.length) {
     console.log("\nErrors:")
     const errs = new Set<string>(result.errors)
