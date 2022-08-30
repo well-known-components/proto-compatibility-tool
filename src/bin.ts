@@ -28,9 +28,17 @@ async function main() {
   {
     const [remote, local] = nonOptionArguments
     if (RECURSIVE) {
+      // compare local files against remote files
       const remoteFiles = glob.sync("**/*.proto", { cwd: remote, absolute: false })
       for (const remoteFile of remoteFiles) {
         result.fixtures.push({ remoteCwd: remote, localCwd: local, remoteFile, localFile: remoteFile })
+      }
+      // then compare NEW local files that are not present in the remote
+      const localFiles = glob.sync("**/*.proto", { cwd: local, absolute: false })
+      for (const localFile of localFiles) {
+        if (!result.fixtures.find(($) => $.localFile == localFile)) {
+          result.fixtures.push({ remoteCwd: local, localCwd: local, remoteFile: localFile, localFile: localFile })
+        }
       }
     } else {
       result.fixtures.push({ remoteCwd: ".", localCwd: ".", remoteFile: remote, localFile: local })
@@ -81,8 +89,12 @@ async function main() {
   console.log("\nChecked:")
 
   for (let fixture of result.fixtures) {
-    console.log("- " + path.relative(process.cwd(), path.resolve(fixture.localCwd, fixture.localFile)))
-    console.log("  " + path.relative(process.cwd(), path.resolve(fixture.remoteCwd, fixture.remoteFile)))
+    const local = path.relative(process.cwd(), path.resolve(fixture.localCwd, fixture.localFile))
+    const remote = path.relative(process.cwd(), path.resolve(fixture.remoteCwd, fixture.remoteFile))
+    if (local == remote) {
+      console.log("- " + local)
+      console.log("  " + remote)
+    }
   }
 
   if (result.errors.length) {
