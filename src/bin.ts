@@ -1,6 +1,5 @@
 #!/usr/bin/env node
 
-import fetch from "node-fetch"
 import * as fs from "fs"
 import * as path from "path"
 import * as pbjspath from "@protobufjs/path"
@@ -65,14 +64,7 @@ async function main() {
 
       result.errors.push(...validationResult.errors.map(($) => $.message))
     } catch (err: any) {
-      // TODO: remove this IF after https://github.com/protobufjs/protobuf.js/pull/1789 is released
-      if (err.message == "object must be a valid nested object") {
-        if (!JSON_OUTPUT) {
-          console.log("⚠️ WARNING: the file " + fixture.remoteFile + " was ignored due to a bug in protobuf.js parser")
-        }
-      } else {
-        result.errors.push(err.message + " (in " + fixture.remoteFile + ")")
-      }
+      result.errors.push(err.message + " (in " + fixture.remoteFile + ")")
     }
   }
 
