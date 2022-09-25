@@ -36,7 +36,7 @@ async function main() {
       // then compare NEW local files that are not present in the remote
       const localFiles = glob.sync("**/*.proto", { cwd: local, absolute: false })
       for (const localFile of localFiles) {
-        if (!result.fixtures.find(($) => $.localFile == localFile) && !localFile.startsWith('node_modules/')) {
+        if (!result.fixtures.find(($) => $.localFile == localFile) && !localFile.startsWith("node_modules/")) {
           result.fixtures.push({ remoteCwd: local, localCwd: local, remoteFile: localFile, localFile: localFile })
         }
       }
@@ -54,16 +54,29 @@ async function main() {
       const remoteRoot = new lib.Root()
       const localRoot = new lib.Root()
 
-      localRoot.resolvePath = remoteRoot.resolvePath = function (origin: string, target: string) {
-        const resolved = pbjspath.resolve(origin, target)
-        if (target.startsWith("google/") && !fs.existsSync(resolved)) {
-          return pbjspath.resolve(require.resolve("protobufjs/package.json"), target)
+      function getResolver(root: string, debug: string) {
+        return function (this: lib.Root, base: string, file: string) {
+          const resolved = pbjspath.resolve(base, file)
+          if (fs.existsSync(resolved)) {
+            return resolved
+          }
+          if (file.startsWith("google/")) {
+            return pbjspath.resolve(require.resolve("protobufjs/package.json"), file)
+          }
+          const relativeToProject = path.resolve(root, '.', file)
+          if (fs.existsSync(relativeToProject)) {
+            return relativeToProject
+          }
+          process.stderr.write('Error resolving file: ' + JSON.stringify({ base, file, resolved, root, debug, relativeToProject }, null, 2) + "\n")
+          return resolved
         }
-        return resolved
       }
 
-      await remoteRoot.load(path.resolve(fixture.remoteCwd, fixture.remoteFile))
-      await localRoot.load(path.resolve(fixture.localCwd, fixture.localFile))
+      localRoot.resolvePath = getResolver(path.resolve(fixture.localCwd), "local")
+      remoteRoot.resolvePath = getResolver(path.resolve(fixture.remoteCwd), "remote")
+
+      await remoteRoot.load(fixture.remoteFile)
+      await localRoot.load(fixture.localFile)
 
       remoteRoot.root.resolveAll()
       localRoot.root.resolveAll()
