@@ -23,7 +23,7 @@
   "homepage": "https://github.com/well-known-components/proto-compatibility-tool#readme",
   "devDependencies": {
     "@microsoft/api-extractor": "^7.12.1",
-    "@types/glob": "^7.2.0",
+    "@types/glob": "^8.0.1",
     "@types/mocha": "^9.1.1",
     "expect": "^26.6.2",
     "mocha": "^10.0.0",
